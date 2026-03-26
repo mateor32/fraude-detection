@@ -3,7 +3,6 @@ package com.fraude.transaccion.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,9 +17,8 @@ public class Transaccion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private BigDecimal monto;
-
-    private String descripcion;
+    @Column(name = "monto")
+    private Double monto;
 
     @Column(name = "cuenta_origen_id")
     private String cuentaOrigenId;

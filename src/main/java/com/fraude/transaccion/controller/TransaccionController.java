@@ -4,11 +4,10 @@ import com.fraude.transaccion.model.Transaccion;
 import com.fraude.transaccion.service.TransaccionService;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/transacciones")
+@RequestMapping("/api/transacciones")
 public class TransaccionController {
 
     private final TransaccionService service;
@@ -17,11 +16,9 @@ public class TransaccionController {
         this.service = service;
     }
 
-    @PostMapping("/transferir")
-    public Transaccion transferir(@RequestParam String origen,
-                                  @RequestParam String destino,
-                                  @RequestParam BigDecimal monto) {
-        return service.transferir(origen, destino, monto);
+    @PostMapping
+    public Transaccion procesarTransaccion(@RequestBody Transaccion transaccion) {
+        return service.procesarTransaccion(transaccion);
     }
 
     @GetMapping("/cuenta/{numeroCuenta}")

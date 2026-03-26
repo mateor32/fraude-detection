@@ -15,57 +15,53 @@ import java.util.List;
 @Service
 public class TransaccionService {
 
-    private final CuentaRepository cuentaRepository;
     private final TransaccionRepository transaccionRepository;
+    private final FraudeService fraudeService;
+    private final CuentaRepository cuentaRepository;
 
-    public TransaccionService(CuentaRepository cuentaRepository,
-                              TransaccionRepository transaccionRepository) {
-        this.cuentaRepository = cuentaRepository;
+    public TransaccionService(TransaccionRepository transaccionRepository, FraudeService fraudeService, CuentaRepository cuentaRepository) {
         this.transaccionRepository = transaccionRepository;
+        this.fraudeService = fraudeService;
+        this.cuentaRepository = cuentaRepository;
     }
 
     @Transactional
-    public Transaccion transferir(String origenId, String destinoId, BigDecimal monto){
-        System.out.println("Origen: " + origenId);
-        System.out.println("Destino: " + destinoId);
-        Cuenta origen = cuentaRepository.findById(origenId)
-                .orElseThrow(() -> new RuntimeException("Cuenta origen no existe"));
+    public Transaccion procesarTransaccion(Transaccion transaccion) {
+        // Evaluar fraude
+        Integer estadoId = fraudeService.evaluarFraude(transaccion);
+        transaccion.setEstadoId(estadoId);
 
-        Cuenta destino = cuentaRepository.findById(destinoId)
-                .orElseThrow(() -> new RuntimeException("Cuenta destino no existe"));
+        // Si es aprobada, actualizar saldos
+        if (estadoId == 5) { // APROBADA
+            Cuenta origen = cuentaRepository.findById(transaccion.getCuentaOrigenId())
+                    .orElseThrow(() -> new RuntimeException("Cuenta origen no existe"));
 
-        // 🔥 VALIDACIÓN
-        if (origen.getSaldo().compareTo(monto) < 0) {
-            throw new RuntimeException("Saldo insuficiente");
+            Cuenta destino = cuentaRepository.findById(transaccion.getCuentaDestinoId())
+                    .orElseThrow(() -> new RuntimeException("Cuenta destino no existe"));
+
+            // Validación de saldo
+            if (origen.getSaldo().compareTo(BigDecimal.valueOf(transaccion.getMonto())) <= 0) {
+                throw new RuntimeException("Saldo insuficiente");
+            }
+
+            // Actualizar saldos
+            origen.setSaldo(origen.getSaldo().subtract(BigDecimal.valueOf(transaccion.getMonto())));
+            destino.setSaldo(destino.getSaldo().add(BigDecimal.valueOf(transaccion.getMonto())));
+
+            cuentaRepository.save(origen);
+            cuentaRepository.save(destino);
         }
 
-        // 💰 ACTUALIZAR SALDOS
-        origen.setSaldo(origen.getSaldo().subtract(monto));
-        destino.setSaldo(destino.getSaldo().add(monto));
+        // Asignar tipo y fecha
+        transaccion.setTipoTransaccionId(1);
+        transaccion.setFechaCreacion(LocalDateTime.now());
 
-        cuentaRepository.save(origen);
-        cuentaRepository.save(destino);
-
-        // 🧾 CREAR TRANSACCIÓN
-        Transaccion t = Transaccion.builder()
-                .monto(monto)
-                .cuentaOrigenId(origenId)
-                .cuentaDestinoId(destinoId)
-                .estadoId(1)
-                .tipoTransaccionId(1)
-                .fechaCreacion(LocalDateTime.now())
-                .build();
-
-        return transaccionRepository.save(t);
+        return transaccionRepository.save(transaccion);
     }
 
-    public List<Transaccion> obtenerHistorial(String numeroCuenta) {
-
-        List<Transaccion> enviadas = transaccionRepository
-                .findByCuentaOrigenId(numeroCuenta);
-
-        List<Transaccion> recibidas = transaccionRepository
-                .findByCuentaDestinoId(numeroCuenta);
+    public List<Transaccion> obtenerHistorial(String cuentaId) {
+        List<Transaccion> enviadas = transaccionRepository.findByCuentaOrigenId(cuentaId);
+        List<Transaccion> recibidas = transaccionRepository.findByCuentaDestinoId(cuentaId);
 
         List<Transaccion> historial = new ArrayList<>();
         historial.addAll(enviadas);
