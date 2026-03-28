@@ -2,6 +2,7 @@ package com.fraude.usuario.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fraude.rol.model.Rol;
 
 import java.time.LocalDateTime;
 
@@ -18,6 +19,10 @@ public class Usuario {
 
     @Column(name = "rol_id")
     private Integer rolId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rol_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Rol rol;
 
     private String nombre;
 

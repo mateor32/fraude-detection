@@ -7,4 +7,5 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Intege
 
     List<Transaccion> findByCuentaOrigenId(String cuentaOrigenId);
     List<Transaccion> findByCuentaDestinoId(String cuentaDestinoId);
+    List<Transaccion> findByEstadoId(Integer estadoId);
 }
