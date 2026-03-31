@@ -61,4 +61,25 @@ public class UsuarioService {
                 .rol(usuario.getRol() != null ? usuario.getRol().getNombre() : null)
                 .build();
     }
+
+    public boolean esAdministrador(String numDocumento) {
+        if (numDocumento == null || numDocumento.isBlank()) {
+            return false;
+        }
+
+        return repository.findByNumDocumento(numDocumento.trim())
+                .map(Usuario::getRol)
+                .map(rol -> rol != null ? rol.getNombre() : null)
+                .map(this::esRolAdmin)
+                .orElse(false);
+    }
+
+    private boolean esRolAdmin(String rolNombre) {
+        if (rolNombre == null || rolNombre.isBlank()) {
+            return false;
+        }
+
+        String normalizado = rolNombre.trim().toUpperCase();
+        return normalizado.equals("ADMIN") || normalizado.equals("ADMINISTRADOR");
+    }
 }

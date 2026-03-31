@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Check, ArrowRight, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { crearTransaccion } from "@/services/transaccionService";
 
 const Transfer = () => {
   const { user } = useAuth();
@@ -31,49 +32,28 @@ const Transfer = () => {
         monto: parsedAmount,
       };
 
-      console.log("📤 Enviando transferencia:", transaccion);
+      const result = await crearTransaccion(transaccion);
 
-      const response = await fetch("http://localhost:8080/api/transacciones", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(transaccion),
-      });
+      const estadoId = result.estadoId;
+      let mensaje = "Transferencia creada";
 
-      console.log("📥 Respuesta del servidor:", response.status);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log("✅ Transacción procesada:", result);
-        
-        // Determinar el estado
-        const estadoId = result.estadoId;
-        let mensaje = "";
-        
-        if (estadoId === 5) {
-          mensaje = "✅ Transferencia APROBADA";
-        } else if (estadoId === 4) {
-          mensaje = "⏳ Transferencia PENDIENTE de revisión";
-        } else if (estadoId === 6) {
-          mensaje = "❌ Transferencia RECHAZADA";
-        }
-        
-        toast.success(mensaje);
-        
-        // Limpiar formulario
-        setStep(1);
-        setToAccount("");
-        setAmount("");
-        setShowConfirm(false);
-      } else {
-        const errorData = await response.json();
-        console.error("❌ Error:", errorData);
-        toast.error(errorData.message || "Error al procesar la transferencia");
+      if (estadoId === 5) {
+        mensaje = "Transferencia aprobada";
+      } else if (estadoId === 4) {
+        mensaje = "Transferencia pendiente de revision";
+      } else if (estadoId === 6) {
+        mensaje = "Transferencia rechazada";
       }
+
+      toast.success(mensaje);
+
+      setStep(1);
+      setToAccount("");
+      setAmount("");
+      setShowConfirm(false);
     } catch (error) {
-      console.error("❌ Error de conexión:", error);
-      toast.error("Error de conexión con el servidor");
+      const message = error instanceof Error ? error.message : "Error al procesar la transferencia";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

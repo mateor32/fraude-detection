@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -129,6 +130,8 @@ public class TransaccionService {
             historial.addAll(enviadas);
             historial.addAll(recibidas);
             
+            historial.sort(Comparator.comparing(Transaccion::getFechaCreacion, Comparator.nullsLast(Comparator.reverseOrder())));
+
             log.info("Historial obtenido: {} transacciones", historial.size());
             return historial;
         } catch (Exception e) {
@@ -138,10 +141,22 @@ public class TransaccionService {
     }
 
     // Métodos para administrador
+    public List<Transaccion> obtenerTodasTransacciones() {
+        try {
+            List<Transaccion> transacciones = transaccionRepository.findAll();
+            transacciones.sort(Comparator.comparing(Transaccion::getFechaCreacion, Comparator.nullsLast(Comparator.reverseOrder())));
+            return transacciones;
+        } catch (Exception e) {
+            log.error("Error al obtener todas las transacciones: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
     public List<Transaccion> obtenerTransaccionesPendientes() {
         try {
             log.info("Obteniendo todas las transacciones pendientes");
             List<Transaccion> pendientes = transaccionRepository.findByEstadoId(4);
+            pendientes.sort(Comparator.comparing(Transaccion::getFechaCreacion, Comparator.nullsLast(Comparator.reverseOrder())));
             log.info("Transacciones pendientes obtenidas: {}", pendientes.size());
             return pendientes;
         } catch (Exception e) {
@@ -162,6 +177,14 @@ public class TransaccionService {
                     });
 
             Integer estadoAnterior = transaccion.getEstadoId();
+
+            if (estadoAnterior == null || estadoAnterior != 4) {
+                throw new IllegalArgumentException("Solo se pueden validar transacciones en estado PENDIENTE");
+            }
+
+            if (nuevoEstado == null || (nuevoEstado != 5 && nuevoEstado != 6)) {
+                throw new IllegalArgumentException("Estado inválido para validación administrativa");
+            }
             
             // Si cambia de PENDIENTE (4) a APROBADA (5), actualizar saldos
             if (estadoAnterior == 4 && nuevoEstado == 5) {

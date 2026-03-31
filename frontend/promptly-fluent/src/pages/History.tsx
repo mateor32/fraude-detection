@@ -30,13 +30,10 @@ const HistoryPage = () => {
 
   if (!user) return null;
 
-  const mapearEstado = (estadoId?: number): string => {
-    const estadoMap: { [key: number]: string } = {
-      4: "SOSPECHOSA",
-      5: "APROBADA",
-      6: "RECHAZADA",
-    };
-    return estadoMap[estadoId || 0] || "DESCONOCIDO";
+  const mapearEstado = (estadoId?: number): "approved" | "rejected" | "pending" => {
+    if (estadoId === 5) return "approved";
+    if (estadoId === 6) return "rejected";
+    return "pending";
   };
 
   return (
@@ -68,7 +65,11 @@ const HistoryPage = () => {
                     {txn.fechaCreacion ? new Date(txn.fechaCreacion).toLocaleDateString("es-ES") : "-"}
                   </TableCell>
                   <TableCell className="text-sm text-foreground">
-                    {txn.cuentaOrigenId === user.numeroCuenta ? `→ ${txn.cuentaDestinoId}` : `← ${txn.cuentaOrigenId}`}
+                    <span className={txn.cuentaOrigenId === user.numeroCuenta ? "text-red-500" : "text-green-500"}>
+                          {txn.cuentaOrigenId === user.numeroCuenta
+                          ? `→ ${txn.cuentaDestinoId}`
+                          : `← ${txn.cuentaOrigenId}`}
+                    </span>
                   </TableCell>
                   <TableCell className="text-sm font-bold text-foreground text-right">
                     ${txn.monto.toLocaleString("es-MX", { minimumFractionDigits: 2 })}

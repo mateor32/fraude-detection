@@ -9,10 +9,22 @@ import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Transfer from "./pages/Transfer";
 import HistoryPage from "./pages/History";
-//import AdminPage from "./pages/Admin";
+import AdminPage from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import { useAuth } from "./hooks/useAuth";
+import { isAdminRole } from "./lib/roles";
 
 const queryClient = new QueryClient();
+
+const AdminRoute = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return isAdminRole(user.rol) ? <AdminPage /> : <Navigate to="/dashboard" replace />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,7 +39,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/transfer" element={<Transfer />} />
               <Route path="/history" element={<HistoryPage />} />
-
+              <Route path="/admin" element={<AdminRoute />} />
 
             </Route>
             <Route path="*" element={<NotFound />} />

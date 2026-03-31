@@ -11,7 +11,8 @@ export interface User {
   id: number; // En tu Java es Integer
   nombreCompleto: string;
   username: string;
-  rol: "ADMIN" | "CLIENTE"; // Coincide con tus Enums/Strings de Java
+  numDocumento: string;
+  rol: string;
   saldo: number;
   numeroCuenta: string;
 }
@@ -66,6 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           id: 0,
           nombreCompleto: data.nombre,
           username: data.email,
+          numDocumento,
           rol: data.rol || "CLIENTE",
           saldo: data.saldo ? parseFloat(data.saldo) : 0, // Convertir BigDecimal a número
           numeroCuenta: data.numeroCuenta || numDocumento,

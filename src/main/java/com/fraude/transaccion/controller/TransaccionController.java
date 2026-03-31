@@ -2,6 +2,7 @@ package com.fraude.transaccion.controller;
 
 import com.fraude.transaccion.model.Transaccion;
 import com.fraude.transaccion.service.TransaccionService;
+import com.fraude.usuario.service.UsuarioService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,11 @@ import java.util.Map;
 public class TransaccionController {
 
     private final TransaccionService service;
+    private final UsuarioService usuarioService;
 
-    public TransaccionController(TransaccionService service) {
+    public TransaccionController(TransaccionService service, UsuarioService usuarioService) {
         this.service = service;
+        this.usuarioService = usuarioService;
     }
 
     @PostMapping
@@ -65,8 +68,35 @@ public class TransaccionController {
     }
 
     // Endpoints para administrador
+    @GetMapping
+    public ResponseEntity<?> obtenerTodasTransacciones(
+            @RequestHeader(name = "X-Admin-Documento", required = false) String adminDocumento) {
+        ResponseEntity<Map<String, Object>> authError = validarAdmin(adminDocumento);
+        if (authError != null) {
+            return authError;
+        }
+
+        try {
+            log.info("Solicitud admin de todas las transacciones");
+            return ResponseEntity.ok(service.obtenerTodasTransacciones());
+        } catch (Exception e) {
+            log.error("Error al obtener todas las transacciones: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Error al obtener transacciones");
+            error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
     @GetMapping("/pendientes")
-    public ResponseEntity<?> obtenerTransaccionesPendientes() {
+    public ResponseEntity<?> obtenerTransaccionesPendientes(
+            @RequestHeader(name = "X-Admin-Documento", required = false) String adminDocumento) {
+        ResponseEntity<Map<String, Object>> authError = validarAdmin(adminDocumento);
+        if (authError != null) {
+            return authError;
+        }
+
         try {
             log.info("👨‍💼 Solicitud de transacciones pendientes (Admin)");
             List<Transaccion> pendientes = service.obtenerTransaccionesPendientes();
@@ -83,13 +113,21 @@ public class TransaccionController {
     }
 
     @PutMapping("/{id}/estado")
-    public ResponseEntity<?> actualizarEstadoTransaccion(@PathVariable Integer id, @RequestBody Map<String, Integer> body) {
+    public ResponseEntity<?> actualizarEstadoTransaccion(
+            @PathVariable Integer id,
+            @RequestHeader(name = "X-Admin-Documento", required = false) String adminDocumento,
+            @RequestBody Map<String, Integer> body) {
+        ResponseEntity<Map<String, Object>> authError = validarAdmin(adminDocumento);
+        if (authError != null) {
+            return authError;
+        }
+
         try {
             log.info("👨‍💼 Solicitud de actualización de estado para transacción: {}", id);
             Integer nuevoEstado = body.get("estadoId");
             
-            if (nuevoEstado == null || (nuevoEstado != 4 && nuevoEstado != 5 && nuevoEstado != 6)) {
-                throw new IllegalArgumentException("Estado inválido. Debe ser 4 (PENDIENTE), 5 (APROBADA) o 6 (RECHAZADA)");
+            if (nuevoEstado == null || (nuevoEstado != 5 && nuevoEstado != 6)) {
+                throw new IllegalArgumentException("Estado inválido. Debe ser 5 (APROBADA) o 6 (RECHAZADA)");
             }
             
             Transaccion actualizada = service.actualizarEstadoTransaccion(id, nuevoEstado);
@@ -110,5 +148,25 @@ public class TransaccionController {
             error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
+    }
+
+    private ResponseEntity<Map<String, Object>> validarAdmin(String adminDocumento) {
+        if (adminDocumento == null || adminDocumento.isBlank()) {
+            return construirError(HttpStatus.BAD_REQUEST, "Header X-Admin-Documento es requerido");
+        }
+
+        if (!usuarioService.esAdministrador(adminDocumento)) {
+            return construirError(HttpStatus.FORBIDDEN, "Solo un administrador puede ejecutar esta acción");
+        }
+
+        return null;
+    }
+
+    private ResponseEntity<Map<String, Object>> construirError(HttpStatus status, String message) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("success", false);
+        error.put("message", message);
+        error.put("status", status.value());
+        return ResponseEntity.status(status).body(error);
     }
 }

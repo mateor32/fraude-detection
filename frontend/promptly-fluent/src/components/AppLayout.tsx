@@ -1,8 +1,8 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { LayoutDashboard, ArrowLeftRight, History, ShieldCheck, LogOut, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isAdminRole } from "@/lib/roles";
 import { useState, useEffect } from "react";
 
 const navItems = [
@@ -27,7 +27,7 @@ const AppLayout = () => {
 
   if (!user) return null;
 
-  const allItems = user.rol === "ADMIN" ? [...navItems, ...adminItems] : navItems;
+  const allItems = isAdminRole(user.rol) ? [...navItems, ...adminItems] : navItems;
 
   const handleLogout = () => {
     logout();
@@ -100,7 +100,7 @@ const AppLayout = () => {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-semibold text-foreground">{user.nombreCompleto}</p>
-              <p className="text-xs text-muted-foreground">{user.rol === "ADMIN" ? "Administrador" : "Cliente"}</p>
+              <p className="text-xs text-muted-foreground">{isAdminRole(user.rol) ? "Administrador" : "Cliente"}</p>
             </div>
             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
               <span className="text-primary-foreground text-sm font-semibold">
