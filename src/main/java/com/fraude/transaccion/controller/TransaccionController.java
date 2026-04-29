@@ -15,7 +15,8 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/transacciones")
-@CrossOrigin(origins = {"http://localhost:8081", "http://localhost:5173", "http://127.0.0.1:5173"})
+@CrossOrigin(origins = { "http://localhost:8081", "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:5174", "http://127.0.0.1:5174" })
 public class TransaccionController {
 
     private final TransaccionService service;
@@ -125,11 +126,11 @@ public class TransaccionController {
         try {
             log.info("👨‍💼 Solicitud de actualización de estado para transacción: {}", id);
             Integer nuevoEstado = body.get("estadoId");
-            
+
             if (nuevoEstado == null || (nuevoEstado != 5 && nuevoEstado != 6)) {
                 throw new IllegalArgumentException("Estado inválido. Debe ser 5 (APROBADA) o 6 (RECHAZADA)");
             }
-            
+
             Transaccion actualizada = service.actualizarEstadoTransaccion(id, nuevoEstado);
             log.info("Estado de transacción actualizado: id={}, estado={}", id, nuevoEstado);
             return ResponseEntity.ok(actualizada);
