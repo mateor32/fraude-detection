@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Mail, Lock, Eye, EyeOff, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -101,12 +101,19 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="pt-4 border-t border-border">
+          <div className="pt-4 border-t border-border space-y-3">
+            <p className="text-center text-sm text-muted-foreground">
+              ¿No tienes cuenta?{" "}
+              <Link
+                to="/register"
+                className="text-primary font-medium hover:underline"
+              >
+                Crear cuenta
+              </Link>
+            </p>
             <p className="text-xs text-muted-foreground text-center space-y-1">
-              <span className="block">Demo: admin@finbank.com / admin123</span>
-              <span className="block">
-                Demo: cliente@finbank.com / cliente123
-              </span>
+              <span className="block">Demo admin: 12345678 / admin123</span>
+              <span className="block">Demo usuario: 87654321 / user123</span>
             </p>
           </div>
         </div>
