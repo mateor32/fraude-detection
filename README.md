@@ -1,4 +1,4 @@
-# 🛡️ FraudeShield — Sistema de Detección de Fraude Bancario
+# 🛡️ FinBank - backend de un banco digital
 
 <div align="center">
 
