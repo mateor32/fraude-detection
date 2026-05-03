@@ -11,7 +11,5 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class UsuarioId implements Serializable {
 
-    private Integer tipoDocumentoId;
-
     private String numDocumento;
 }

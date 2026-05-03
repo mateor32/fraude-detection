@@ -31,13 +31,13 @@ public class ReporteService {
         Map<String, Object> resumen = new LinkedHashMap<>();
 
         long totalTransacciones = transaccionRepository.count();
-        long aprobadas = transaccionRepository.countByEstadoId(5);
-        long rechazadas = transaccionRepository.countByEstadoId(6);
-        long pendientes = transaccionRepository.countByEstadoId(4);
+        long aprobadas = transaccionRepository.countByEstadoTransaccionNombre("APROBADA");
+        long rechazadas = transaccionRepository.countByEstadoTransaccionNombre("RECHAZADA");
+        long pendientes = transaccionRepository.countByEstadoTransaccionNombre("PENDIENTE");
 
         double montoAprobado = transaccionRepository.sumMontoAprobadas();
-        double montoRechazado = transaccionRepository.sumMontoByEstado(6);
-        double montoPendiente = transaccionRepository.sumMontoByEstado(4);
+        double montoRechazado = transaccionRepository.sumMontoByEstadoNombre("RECHAZADA");
+        double montoPendiente = transaccionRepository.sumMontoByEstadoNombre("PENDIENTE");
 
         long totalClientes = usuarioRepository.count();
         long totalCuentas = cuentaRepository.count();
@@ -68,11 +68,11 @@ public class ReporteService {
         List<Map<String, Object>> lista = new ArrayList<>();
 
         String[] nombres = { "Pendiente", "Aprobada", "Rechazada" };
-        Integer[] estados = { 4, 5, 6 };
+        String[] estadosNombre = { "PENDIENTE", "APROBADA", "RECHAZADA" };
         String[] colores = { "#f59e0b", "#10b981", "#ef4444" };
 
-        for (int i = 0; i < estados.length; i++) {
-            long count = transaccionRepository.countByEstadoId(estados[i]);
+        for (int i = 0; i < estadosNombre.length; i++) {
+            long count = transaccionRepository.countByEstadoTransaccionNombre(estadosNombre[i]);
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("estado", nombres[i]);
             item.put("cantidad", count);

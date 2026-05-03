@@ -12,21 +12,21 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Intege
 
     List<Transaccion> findByCuentaDestinoId(String cuentaDestinoId);
 
-    List<Transaccion> findByEstadoId(Integer estadoId);
+    List<Transaccion> findByEstadoTransaccionNombre(String nombre);
 
-    // Conteos por estado
-    long countByEstadoId(Integer estadoId);
+    // Conteos por nombre de estado
+    long countByEstadoTransaccionNombre(String nombre);
 
     // Suma de montos aprobados
-    @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t WHERE t.estadoId = 5")
+    @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t WHERE t.estadoTransaccion.nombre = 'APROBADA'")
     Double sumMontoAprobadas();
 
-    // Suma de montos por estado
-    @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t WHERE t.estadoId = :estadoId")
-    Double sumMontoByEstado(@Param("estadoId") Integer estadoId);
+    // Suma de montos por nombre de estado
+    @Query("SELECT COALESCE(SUM(t.monto), 0) FROM Transaccion t WHERE t.estadoTransaccion.nombre = :nombre")
+    Double sumMontoByEstadoNombre(@Param("nombre") String nombre);
 
     // Transacciones agrupadas por cuenta origen (top cuentas)
-    @Query("SELECT t.cuentaOrigenId, COUNT(t), COALESCE(SUM(t.monto), 0) FROM Transaccion t WHERE t.estadoId = 5 GROUP BY t.cuentaOrigenId ORDER BY COUNT(t) DESC")
+    @Query("SELECT t.cuentaOrigenId, COUNT(t), COALESCE(SUM(t.monto), 0) FROM Transaccion t WHERE t.estadoTransaccion.nombre = 'APROBADA' GROUP BY t.cuentaOrigenId ORDER BY COUNT(t) DESC")
     List<Object[]> topCuentasPorActividad();
 
     // Historial de una cuenta específica (enviadas + recibidas)

@@ -102,10 +102,7 @@ export default function Tarjetas() {
 
   const [form, setForm] = useState({
     tipoTarjeta: "DEBITO",
-    numeroTarjeta: "",
     nombreTitular: "",
-    expMes: "",
-    expAnio: "",
   });
 
   const cargarTarjetas = async () => {
@@ -140,15 +137,10 @@ export default function Tarjetas() {
 
   const solicitarTarjeta = async () => {
     if (!user) return;
-    if (
-      !form.numeroTarjeta ||
-      !form.nombreTitular ||
-      !form.expMes ||
-      !form.expAnio
-    ) {
+    if (!form.nombreTitular) {
       toast({
         title: "Campos incompletos",
-        description: "Completa todos los campos",
+        description: "Ingresa el nombre del titular",
         variant: "destructive",
       });
       return;
@@ -162,12 +154,8 @@ export default function Tarjetas() {
           "X-User-Documento": user.numDocumento,
         },
         body: JSON.stringify({
-          tipoDocumentoId: 1,
           nombreTitular: form.nombreTitular,
           tipoTarjeta: form.tipoTarjeta,
-          numeroTarjeta: form.numeroTarjeta,
-          expMes: parseInt(form.expMes),
-          expAnio: parseInt(form.expAnio),
         }),
       });
       const data = await res.json();
@@ -180,10 +168,7 @@ export default function Tarjetas() {
       setOpenSolicitud(false);
       setForm({
         tipoTarjeta: "DEBITO",
-        numeroTarjeta: "",
         nombreTitular: user.nombreCompleto,
-        expMes: "",
-        expAnio: "",
       });
       cargarTarjetas();
     } catch (e: any) {
@@ -293,22 +278,6 @@ export default function Tarjetas() {
                 </Select>
               </div>
               <div>
-                <Label>Número de tarjeta</Label>
-                <Input
-                  placeholder="4242 4242 4242 4242"
-                  maxLength={19}
-                  value={form.numeroTarjeta}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      numeroTarjeta: e.target.value
-                        .replace(/[^0-9]/g, "")
-                        .slice(0, 16),
-                    }))
-                  }
-                />
-              </div>
-              <div>
                 <Label>Nombre del titular</Label>
                 <Input
                   value={form.nombreTitular}
@@ -316,36 +285,6 @@ export default function Tarjetas() {
                     setForm((f) => ({ ...f, nombreTitular: e.target.value }))
                   }
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label>Mes exp.</Label>
-                  <Input
-                    placeholder="MM"
-                    maxLength={2}
-                    value={form.expMes}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        expMes: e.target.value.replace(/[^0-9]/g, ""),
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Año exp.</Label>
-                  <Input
-                    placeholder="YYYY"
-                    maxLength={4}
-                    value={form.expAnio}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        expAnio: e.target.value.replace(/[^0-9]/g, ""),
-                      }))
-                    }
-                  />
-                </div>
               </div>
               <Button
                 className="w-full"

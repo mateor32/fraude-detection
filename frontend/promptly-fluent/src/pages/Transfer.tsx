@@ -1,19 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Check, ArrowRight, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { crearTransaccion } from "@/services/transaccionService";
+import {
+  crearTransaccion,
+  obtenerTiposTransaccion,
+  TipoTransaccion,
+} from "@/services/transaccionService";
 
 const Transfer = () => {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [toAccount, setToAccount] = useState("");
   const [amount, setAmount] = useState("");
+  const [tipoSeleccionado, setTipoSeleccionado] =
+    useState<string>("TRANSFERENCIA");
+  const [tipos, setTipos] = useState<TipoTransaccion[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    obtenerTiposTransaccion()
+      .then(setTipos)
+      .catch(() => {
+        /* silencioso — se usa el default */
+      });
+  }, []);
 
   if (!user) return null;
 
@@ -26,10 +48,12 @@ const Transfer = () => {
   const handleConfirm = async () => {
     setLoading(true);
     try {
+      const tipoObj = tipos.find((t) => t.nombre === tipoSeleccionado);
       const transaccion = {
         cuentaOrigenId: user.numeroCuenta,
         cuentaDestinoId: toAccount,
         monto: parsedAmount,
+        tipoTransaccion: tipoObj,
       };
 
       const result = await crearTransaccion(transaccion);
@@ -52,7 +76,10 @@ const Transfer = () => {
       setAmount("");
       setShowConfirm(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Error al procesar la transferencia";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error al procesar la transferencia";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -111,6 +138,35 @@ const Transfer = () => {
                 onChange={(e) => setToAccount(e.target.value)}
                 className="h-12 rounded-xl bg-secondary/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
               />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-foreground mb-2 block">
+                Tipo de Transacción
+              </span>
+              <Select
+                value={tipoSeleccionado}
+                onValueChange={setTipoSeleccionado}
+              >
+                <SelectTrigger className="h-12 rounded-xl bg-secondary/50 border-0 focus:ring-2 focus:ring-primary/20">
+                  <SelectValue placeholder="Selecciona un tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(tipos.length > 0
+                    ? tipos
+                    : [
+                        { id: 1, nombre: "TRANSFERENCIA" },
+                        { id: 2, nombre: "DEPOSITO" },
+                        { id: 3, nombre: "RETIRO" },
+                        { id: 4, nombre: "PAGO" },
+                        { id: 5, nombre: "COMPRA" },
+                      ]
+                  ).map((t) => (
+                    <SelectItem key={t.id} value={t.nombre}>
+                      {t.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <Button
               onClick={() => setStep(2)}
@@ -206,6 +262,12 @@ const Transfer = () => {
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Tipo</span>
+                  <span className="font-semibold text-foreground">
+                    {tipoSeleccionado}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-border">
                   <span className="text-muted-foreground">Monto</span>
                   <span className="font-bold text-foreground text-lg">
                     $
@@ -241,7 +303,11 @@ const Transfer = () => {
                   {loading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 1,
+                        ease: "linear",
+                      }}
                       className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
                     />
                   ) : (

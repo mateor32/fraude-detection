@@ -34,11 +34,8 @@ public class FacturaController {
     @PostMapping("/generar-prueba")
     public ResponseEntity<?> generarFacturasPrueba(
             @RequestHeader("X-User-Documento") String numDocumento,
-            @RequestBody Map<String, Object> body) {
-        Integer tipoDoc = body.get("tipoDocumentoId") != null
-                ? Integer.valueOf(body.get("tipoDocumentoId").toString())
-                : 1;
-        List<Factura> facturas = facturaService.generarFacturasPrueba(numDocumento, tipoDoc);
+            @RequestBody(required = false) Map<String, Object> body) {
+        List<Factura> facturas = facturaService.generarFacturasPrueba(numDocumento);
         return ResponseEntity.ok(Map.of("mensaje", "Facturas generadas", "facturas", facturas));
     }
 

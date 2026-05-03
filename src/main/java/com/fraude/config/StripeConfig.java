@@ -2,12 +2,13 @@ package com.fraude.config;
 
 import com.stripe.Stripe;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 public class StripeConfig {
-
 
     @Value("${stripe.secret-key:}")
     private String secretKeyFromProperties;
@@ -21,7 +22,7 @@ public class StripeConfig {
         } else if (secretKeyFromProperties != null && !secretKeyFromProperties.isBlank()) {
             Stripe.apiKey = secretKeyFromProperties;
         } else {
-            throw new IllegalStateException("Stripe Secret Key no configurada. Usa la variable de entorno STRIPE_SECRET_KEY.");
+            log.warn("Stripe Secret Key no configurada. Los pagos con Stripe no estarán disponibles.");
         }
     }
 }

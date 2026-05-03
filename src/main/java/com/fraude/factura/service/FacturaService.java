@@ -2,8 +2,12 @@ package com.fraude.factura.service;
 
 import com.fraude.cuenta.model.Cuenta;
 import com.fraude.cuenta.repository.CuentaRepository;
+import com.fraude.factura.model.EstadoFactura;
 import com.fraude.factura.model.Factura;
+import com.fraude.factura.model.Servicio;
+import com.fraude.factura.repository.EstadoFacturaRepository;
 import com.fraude.factura.repository.FacturaRepository;
+import com.fraude.factura.repository.ServicioRepository;
 import com.fraude.tarjeta.model.Tarjeta;
 import com.fraude.tarjeta.repository.TarjetaRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +27,20 @@ public class FacturaService {
     private final FacturaRepository facturaRepository;
     private final TarjetaRepository tarjetaRepository;
     private final CuentaRepository cuentaRepository;
+    private final ServicioRepository servicioRepository;
+    private final EstadoFacturaRepository estadoFacturaRepository;
 
-    public List<Factura> generarFacturasPrueba(String numDocumento, Integer tipoDoc) {
+    private Servicio getServicio(String nombre) {
+        return servicioRepository.findByNombre(nombre)
+                .orElseThrow(() -> new RuntimeException("Tipo de servicio no encontrado: " + nombre));
+    }
+
+    private EstadoFactura getEstado(String nombre) {
+        return estadoFacturaRepository.findByNombre(nombre)
+                .orElseThrow(() -> new RuntimeException("Estado de factura no encontrado: " + nombre));
+    }
+
+    public List<Factura> generarFacturasPrueba(String numDocumento) {
         String[] servicios = { "LUZ", "AGUA", "INTERNET", "GAS", "TELEFONO" };
         String[] descripciones = {
                 "Electricidad - EPM Mes actual",
@@ -33,24 +49,40 @@ public class FacturaService {
                 "Gas natural domiciliario - GasNatural",
                 "Plan movil 10GB - TeleCel"
         };
-        double[] montos = { 85000, 42000, 75000, 38000, 59900 };
+        // Rangos de montos por servicio [min, max]
+        double[][] rangos = {
+                { 60000, 180000 }, // LUZ
+                { 30000, 90000 }, // AGUA
+                { 50000, 120000 }, // INTERNET
+                { 25000, 75000 }, // GAS
+                { 40000, 100000 } // TELEFONO
+        };
+
+        java.util.Random rnd = new java.util.Random();
+        EstadoFactura estadoPendiente = getEstado("PENDIENTE");
 
         for (int i = 0; i < servicios.length; i++) {
-            final String servicioActual = servicios[i];
+            final String servicioNombre = servicios[i];
             final String descripcionActual = descripciones[i];
-            final double montoActual = montos[i];
+            final double[] rango = rangos[i];
             final int diasExtra = i;
-            List<Factura> existentes = facturaRepository.findByNumDocumentoAndEstado(numDocumento, "PENDIENTE");
-            boolean yaExiste = existentes.stream().anyMatch(f -> f.getTipoServicio().equals(servicioActual));
+
+            List<Factura> existentes = facturaRepository
+                    .findByNumDocumentoAndEstadoFacturaNombre(numDocumento, "PENDIENTE");
+            boolean yaExiste = existentes.stream()
+                    .anyMatch(f -> servicioNombre.equals(f.getTipoServicio()));
+
             if (!yaExiste) {
+                // Monto aleatorio dentro del rango, redondeado a centenas
+                double montoAleatorio = Math.round((rango[0] + rnd.nextDouble() * (rango[1] - rango[0])) / 100.0)
+                        * 100.0;
                 Factura factura = Factura.builder()
                         .numDocumento(numDocumento)
-                        .tipoDocumentoId(tipoDoc)
-                        .tipoServicio(servicioActual)
+                        .servicio(getServicio(servicioNombre))
                         .descripcion(descripcionActual)
                         .referencia("REF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                        .monto(montoActual)
-                        .estado("PENDIENTE")
+                        .monto(montoAleatorio)
+                        .estadoFactura(estadoPendiente)
                         .fechaVencimiento(LocalDateTime.now().plusDays(15 + diasExtra * 3))
                         .fechaCreacion(LocalDateTime.now())
                         .build();
@@ -131,7 +163,7 @@ public class FacturaService {
             throw new RuntimeException("Debes indicar una tarjeta o una cuenta para pagar");
         }
 
-        factura.setEstado("PAGADA");
+        factura.setEstadoFactura(getEstado("PAGADA"));
         factura.setFechaPago(LocalDateTime.now());
         facturaRepository.save(factura);
 

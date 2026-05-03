@@ -1,4 +1,4 @@
-# 🛡️ FraudeShield — Sistema de Detección de Fraude Bancario
+# 🏦 BancoDigital — Plataforma Bancaria Digital
 
 <div align="center">
 
@@ -9,7 +9,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 
-**Plataforma bancaria fullstack con detección de fraude, gestión de tarjetas, facturas y transferencias en tiempo real.**
+**Plataforma bancaria digital fullstack para gestión de cuentas, tarjetas, facturas y transferencias en tiempo real.**
 
 </div>
 
@@ -34,7 +34,7 @@
 
 ## 🔍 Descripción General
 
-**FraudeShield** es una aplicación bancaria fullstack orientada a la detección y prevención de fraude financiero. Permite a usuarios gestionar cuentas, solicitar tarjetas (crédito/débito), pagar facturas de servicios y realizar transferencias, mientras un panel de administración centraliza la revisión y aprobación de operaciones sospechosas.
+**BancoDigital** es una aplicación bancaria fullstack que permite a usuarios gestionar cuentas, solicitar tarjetas (crédito/débito), pagar facturas de servicios y realizar transferencias, con un panel de administración para la revisión y aprobación de operaciones.
 
 ### Características Principales
 

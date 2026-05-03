@@ -8,7 +8,6 @@ import lombok.*;
 @Builder
 public class RegisterRequest {
     private String numDocumento;
-    private Integer tipoDocumentoId;
     private String nombre;
     private String apellido;
     private String email;

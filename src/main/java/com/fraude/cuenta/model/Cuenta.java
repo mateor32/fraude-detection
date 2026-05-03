@@ -22,7 +22,4 @@ public class Cuenta {
 
     @Column(name = "num_documento")
     private String numDocumento;
-
-    @Column(name = "tipo_documento_id")
-    private Integer tipoDocumentoId;
 }

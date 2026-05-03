@@ -8,30 +8,27 @@ import org.springframework.stereotype.Service;
 @Service
 public class FraudeService {
 
-    public Integer evaluarFraude(Transaccion transaccion) {
+    public String evaluarFraude(Transaccion transaccion) {
         try {
             log.info("Evaluando fraude para transacción: monto={}", transaccion.getMonto());
-            
-            // Validar que monto no sea nulo
+
             if (transaccion.getMonto() == null) {
                 log.warn("⚠Monto es nulo");
-                return 6; // RECHAZADA
+                return "RECHAZADA";
             }
-            
-            // Convertir a double para comparación
+
             double monto = transaccion.getMonto();
-            
+
             if (monto > 5000000) {
                 log.info("Monto sospechoso (> $5,000,000): $" + monto);
-                return 4; // PENDIENTE - Requiere revisión
+                return "PENDIENTE"; // Requiere revisión
             } else {
                 log.info("Monto bajo (≤ $5,000,000): $" + monto);
-                return 5; // APROBADA
+                return "APROBADA";
             }
         } catch (Exception e) {
             log.error("Error al evaluar fraude", e);
-            return 6; // RECHAZADA por error
+            return "RECHAZADA";
         }
     }
 }
-

@@ -1,5 +1,6 @@
 package com.fraude.tarjeta.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,9 +21,6 @@ public class Tarjeta {
     @Column(name = "num_documento", nullable = false)
     private String numDocumento;
 
-    @Column(name = "tipo_documento_id", nullable = false)
-    private Integer tipoDocumentoId;
-
     /** CREDITO o DEBITO */
     @Column(name = "tipo_tarjeta", nullable = false)
     private String tipoTarjeta;
@@ -38,9 +36,16 @@ public class Tarjeta {
     @Column(name = "fecha_expiracion")
     private String fechaExpiracion;
 
-    /** Marca: VISA, MASTERCARD, AMEX */
-    @Column(name = "marca")
-    private String marca;
+    /** FK normalizada a tbl_marca_tarjeta */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "marca_id")
+    private MarcaTarjeta marcaTarjeta;
+
+    /** Compatibilidad hacia atrás: devuelve el nombre de la marca como string */
+    @JsonProperty("marca")
+    public String getMarca() {
+        return marcaTarjeta != null ? marcaTarjeta.getNombre() : null;
+    }
 
     /** ID del customer en Stripe */
     @Column(name = "stripe_customer_id")
@@ -51,11 +56,24 @@ public class Tarjeta {
     private String stripePaymentMethodId;
 
     /**
-     * 1 = ACTIVA, 2 = PENDIENTE (esperando aprobación admin),
-     * 3 = ELIMINADA, 4 = RECHAZADA
+     * FK normalizada a tbl_estado_tarjeta
+     * (ACTIVA, PENDIENTE, ELIMINADA, RECHAZADA, BLOQUEADA)
      */
-    @Column(name = "estado_id")
-    private Integer estadoId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "estado_id")
+    private EstadoTarjeta estadoTarjeta;
+
+    /** Compatibilidad hacia atrás: devuelve el ID del estado */
+    @JsonProperty("estadoId")
+    public Integer getEstadoId() {
+        return estadoTarjeta != null ? estadoTarjeta.getId() : null;
+    }
+
+    /** Nombre legible del estado (ACTIVA, PENDIENTE, etc.) */
+    @JsonProperty("estadoNombre")
+    public String getEstadoNombre() {
+        return estadoTarjeta != null ? estadoTarjeta.getNombre() : null;
+    }
 
     /** Límite de crédito asignado por el admin (solo tarjetas CREDITO) */
     @Column(name = "limite_credito")

@@ -1,6 +1,19 @@
 // src/services/transaccionService.ts
 
 const API_URL = "http://localhost:8080/api/transacciones";
+const CATALOG_URL = "http://localhost:8080/api/catalogos";
+
+export interface TipoTransaccion {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+}
+
+export interface EstadoTransaccion {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+}
 
 export interface Transaccion {
   id?: number;
@@ -8,15 +21,32 @@ export interface Transaccion {
   cuentaOrigenId: string;
   cuentaDestinoId: string;
   estadoId?: number;
-  tipoTransaccionId?: number;
+  estadoNombre?: string;
+  estadoTransaccion?: EstadoTransaccion;
+  tipoTransaccion?: TipoTransaccion;
+  tipoTransaccionNombre?: string;
   fechaCreacion?: string;
 }
 
 export interface TransaccionResponse extends Transaccion {
   id: number;
   estadoId: number;
+  estadoNombre: string;
   estado?: string;
 }
+
+export const obtenerTiposTransaccion = async (): Promise<TipoTransaccion[]> => {
+  const response = await fetch(`${CATALOG_URL}/tipos-transaccion`);
+  if (!response.ok) throw new Error("Error al obtener tipos de transacción");
+  return response.json();
+};
+
+export const obtenerEstadosTransaccion = async (): Promise<EstadoTransaccion[]> => {
+  const response = await fetch(`${CATALOG_URL}/estados-transaccion`);
+  if (!response.ok) throw new Error("Error al obtener estados de transacción");
+  return response.json();
+};
+
 
 const parseError = async (response: Response, fallback: string): Promise<never> => {
   let message = fallback;
@@ -103,7 +133,7 @@ export const obtenerTransaccionesPendientes = async (adminDocumento: string): Pr
 
 export const actualizarEstadoTransaccion = async (
   id: number,
-  estadoId: 5 | 6,
+  estadoNombre: "APROBADA" | "RECHAZADA",
   adminDocumento: string,
 ): Promise<TransaccionResponse> => {
   const response = await fetch(`${API_URL}/${id}/estado`, {
@@ -112,7 +142,7 @@ export const actualizarEstadoTransaccion = async (
       "Content-Type": "application/json",
       "X-Admin-Documento": adminDocumento,
     },
-    body: JSON.stringify({ estadoId }),
+    body: JSON.stringify({ estadoNombre }),
   });
 
   if (!response.ok) {

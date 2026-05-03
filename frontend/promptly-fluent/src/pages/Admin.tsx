@@ -39,6 +39,7 @@ interface TarjetaPendiente {
   nombreTitular: string;
   fechaExpiracion: string;
   estadoId: number;
+  estadoNombre?: string;
   fechaCreacion: string;
 }
 
@@ -49,10 +50,10 @@ const fmt = new Intl.NumberFormat("es-CO", {
 });
 
 const mapEstadoToStatus = (
-  estadoId?: number,
+  estadoNombre?: string,
 ): "approved" | "rejected" | "pending" => {
-  if (estadoId === 5) return "approved";
-  if (estadoId === 6) return "rejected";
+  if (estadoNombre === "APROBADA") return "approved";
+  if (estadoNombre === "RECHAZADA") return "rejected";
   return "pending";
 };
 
@@ -122,12 +123,17 @@ const AdminPage = () => {
     void loadTarjetasPendientes();
   }, [user]);
 
-  const handleCambiarEstado = async (id: number, estadoId: 5 | 6) => {
+  const handleCambiarEstado = async (
+    id: number,
+    estadoNombre: "APROBADA" | "RECHAZADA",
+  ) => {
     try {
       setUpdatingId(id);
-      await actualizarEstadoTransaccion(id, estadoId, adminDocumento);
+      await actualizarEstadoTransaccion(id, estadoNombre, adminDocumento);
       toast.success(
-        estadoId === 5 ? "Transferencia aprobada" : "Transferencia rechazada",
+        estadoNombre === "APROBADA"
+          ? "Transferencia aprobada"
+          : "Transferencia rechazada",
       );
       await loadData();
     } catch (error) {
@@ -194,8 +200,8 @@ const AdminPage = () => {
   };
 
   const stats = useMemo(() => {
-    const aprobadas = all.filter((t) => t.estadoId === 5).length;
-    const rechazadas = all.filter((t) => t.estadoId === 6).length;
+    const aprobadas = all.filter((t) => t.estadoNombre === "APROBADA").length;
+    const rechazadas = all.filter((t) => t.estadoNombre === "RECHAZADA").length;
     return {
       pendientes: pending.length,
       aprobadas,
@@ -387,6 +393,7 @@ const AdminPage = () => {
                 <TableHead>Fecha</TableHead>
                 <TableHead>Origen</TableHead>
                 <TableHead>Destino</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead className="text-right">Monto</TableHead>
                 <TableHead className="text-center">Acciones</TableHead>
               </TableRow>
@@ -401,6 +408,11 @@ const AdminPage = () => {
                   </TableCell>
                   <TableCell>{txn.cuentaOrigenId}</TableCell>
                   <TableCell>{txn.cuentaDestinoId}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">
+                      {txn.tipoTransaccionNombre ?? "-"}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right font-semibold">
                     $
                     {txn.monto.toLocaleString("es-MX", {
@@ -411,7 +423,7 @@ const AdminPage = () => {
                     <Button
                       size="sm"
                       disabled={updatingId === txn.id}
-                      onClick={() => handleCambiarEstado(txn.id, 5)}
+                      onClick={() => handleCambiarEstado(txn.id, "APROBADA")}
                     >
                       Aprobar
                     </Button>
@@ -419,7 +431,7 @@ const AdminPage = () => {
                       size="sm"
                       variant="destructive"
                       disabled={updatingId === txn.id}
-                      onClick={() => handleCambiarEstado(txn.id, 6)}
+                      onClick={() => handleCambiarEstado(txn.id, "RECHAZADA")}
                     >
                       Rechazar
                     </Button>
@@ -441,6 +453,7 @@ const AdminPage = () => {
               <TableHead>Fecha</TableHead>
               <TableHead>Origen</TableHead>
               <TableHead>Destino</TableHead>
+              <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Monto</TableHead>
               <TableHead className="text-center">Estado</TableHead>
             </TableRow>
@@ -455,6 +468,11 @@ const AdminPage = () => {
                 </TableCell>
                 <TableCell>{txn.cuentaOrigenId}</TableCell>
                 <TableCell>{txn.cuentaDestinoId}</TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">
+                    {txn.tipoTransaccionNombre ?? "-"}
+                  </span>
+                </TableCell>
                 <TableCell className="text-right font-semibold">
                   $
                   {txn.monto.toLocaleString("es-MX", {
@@ -462,7 +480,7 @@ const AdminPage = () => {
                   })}
                 </TableCell>
                 <TableCell className="text-center">
-                  <StatusBadge status={mapEstadoToStatus(txn.estadoId)} />
+                  <StatusBadge status={mapEstadoToStatus(txn.estadoNombre)} />
                 </TableCell>
               </TableRow>
             ))}

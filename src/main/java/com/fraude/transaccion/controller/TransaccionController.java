@@ -117,22 +117,34 @@ public class TransaccionController {
     public ResponseEntity<?> actualizarEstadoTransaccion(
             @PathVariable Integer id,
             @RequestHeader(name = "X-Admin-Documento", required = false) String adminDocumento,
-            @RequestBody Map<String, Integer> body) {
+            @RequestBody Map<String, Object> body) {
         ResponseEntity<Map<String, Object>> authError = validarAdmin(adminDocumento);
         if (authError != null) {
             return authError;
         }
 
         try {
-            log.info("👨‍💼 Solicitud de actualización de estado para transacción: {}", id);
-            Integer nuevoEstado = body.get("estadoId");
-
-            if (nuevoEstado == null || (nuevoEstado != 5 && nuevoEstado != 6)) {
-                throw new IllegalArgumentException("Estado inválido. Debe ser 5 (APROBADA) o 6 (RECHAZADA)");
+            // Acepta tanto "estadoNombre" (nuevo) como "estadoId" para compatibilidad
+            String nuevoEstadoNombre = null;
+            if (body.containsKey("estadoNombre")) {
+                nuevoEstadoNombre = (String) body.get("estadoNombre");
+            } else if (body.containsKey("estadoId")) {
+                // Compatibilidad: 5=APROBADA, 6=RECHAZADA (legacy)
+                Object raw = body.get("estadoId");
+                int legacyId = raw instanceof Number ? ((Number) raw).intValue() : Integer.parseInt(raw.toString());
+                if (legacyId == 5)
+                    nuevoEstadoNombre = "APROBADA";
+                else if (legacyId == 6)
+                    nuevoEstadoNombre = "RECHAZADA";
             }
 
-            Transaccion actualizada = service.actualizarEstadoTransaccion(id, nuevoEstado);
-            log.info("Estado de transacción actualizado: id={}, estado={}", id, nuevoEstado);
+            if (!"APROBADA".equals(nuevoEstadoNombre) && !"RECHAZADA".equals(nuevoEstadoNombre)) {
+                throw new IllegalArgumentException("Estado inválido. Debe ser APROBADA o RECHAZADA");
+            }
+
+            log.info("Solicitud de actualización de estado para transacción: id={}, estado={}", id, nuevoEstadoNombre);
+            Transaccion actualizada = service.actualizarEstadoTransaccion(id, nuevoEstadoNombre);
+            log.info("Estado de transacción actualizado: id={}, estado={}", id, nuevoEstadoNombre);
             return ResponseEntity.ok(actualizada);
         } catch (IllegalArgumentException e) {
             log.warn("⚠️ Validación fallida: {}", e.getMessage());

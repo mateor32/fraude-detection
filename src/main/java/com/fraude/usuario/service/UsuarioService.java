@@ -104,8 +104,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Rol USER no encontrado en la base de datos"));
 
         // Crear usuario
-        int tipoDocId = request.getTipoDocumentoId() != null ? request.getTipoDocumentoId() : 1;
-        UsuarioId id = new UsuarioId(tipoDocId, request.getNumDocumento());
+        UsuarioId id = new UsuarioId(request.getNumDocumento());
         Usuario usuario = Usuario.builder()
                 .id(id)
                 .nombre(request.getNombre())
@@ -130,7 +129,6 @@ public class UsuarioService {
                 .numeroCuenta(numeroCuenta)
                 .saldo(BigDecimal.ZERO)
                 .numDocumento(request.getNumDocumento())
-                .tipoDocumentoId(tipoDocId)
                 .build();
         cuentaRepository.save(cuenta);
 

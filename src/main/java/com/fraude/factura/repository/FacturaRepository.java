@@ -7,5 +7,6 @@ import java.util.List;
 public interface FacturaRepository extends JpaRepository<Factura, Integer> {
     List<Factura> findByNumDocumentoOrderByFechaVencimientoDesc(String numDocumento);
 
-    List<Factura> findByNumDocumentoAndEstado(String numDocumento, String estado);
+    /** Busca facturas por documento y nombre del estado normalizado */
+    List<Factura> findByNumDocumentoAndEstadoFacturaNombre(String numDocumento, String estadoNombre);
 }

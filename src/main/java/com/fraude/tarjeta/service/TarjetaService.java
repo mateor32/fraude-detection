@@ -2,7 +2,11 @@ package com.fraude.tarjeta.service;
 
 import com.fraude.cuenta.model.Cuenta;
 import com.fraude.cuenta.repository.CuentaRepository;
+import com.fraude.tarjeta.model.EstadoTarjeta;
+import com.fraude.tarjeta.model.MarcaTarjeta;
 import com.fraude.tarjeta.model.Tarjeta;
+import com.fraude.tarjeta.repository.EstadoTarjetaRepository;
+import com.fraude.tarjeta.repository.MarcaTarjetaRepository;
 import com.fraude.tarjeta.repository.TarjetaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -19,31 +24,54 @@ public class TarjetaService {
 
     private final TarjetaRepository tarjetaRepository;
     private final CuentaRepository cuentaRepository;
+    private final MarcaTarjetaRepository marcaTarjetaRepository;
+    private final EstadoTarjetaRepository estadoTarjetaRepository;
+
+    private MarcaTarjeta getMarca(String nombre) {
+        return marcaTarjetaRepository.findByNombre(nombre)
+                .orElseThrow(() -> new RuntimeException("Marca de tarjeta no encontrada: " + nombre));
+    }
+
+    private EstadoTarjeta getEstado(String nombre) {
+        return estadoTarjetaRepository.findByNombre(nombre)
+                .orElseThrow(() -> new RuntimeException("Estado de tarjeta no encontrado: " + nombre));
+    }
 
     /**
-     * El usuario solicita una tarjeta. Queda en estado PENDIENTE (estadoId=2)
+     * El usuario solicita una tarjeta. Queda en estado PENDIENTE
      * hasta que un admin la apruebe o rechace.
+     * El número y la fecha de vencimiento se generan automáticamente.
      */
-    public Tarjeta solicitarTarjeta(String numDocumento, Integer tipoDoc, String nombreTitular,
-            String tipoTarjeta, String numeroTarjeta, Long expMes, Long expAnio) {
+    public Tarjeta solicitarTarjeta(String numDocumento, String nombreTitular, String tipoTarjeta) {
 
-        String numLimpio = numeroTarjeta.replaceAll("[^0-9]", "");
-        if (numLimpio.length() < 13 || numLimpio.length() > 19) {
-            throw new IllegalArgumentException("Número de tarjeta inválido (debe tener entre 13 y 19 dígitos)");
+        Random rnd = new Random();
+        // Generar número: VISA (4xxx) o MASTERCARD (51xx-55xx) aleatoriamente
+        boolean esVisa = rnd.nextBoolean();
+        StringBuilder sb = new StringBuilder();
+        if (esVisa) {
+            sb.append("4");
+        } else {
+            sb.append("5").append(1 + rnd.nextInt(5));
         }
+        while (sb.length() < 16) {
+            sb.append(rnd.nextInt(10));
+        }
+        String numGenerado = sb.toString();
+        String marca = detectarMarca(numGenerado);
+        String ultimos4 = numGenerado.substring(12);
 
-        String marca = detectarMarca(numLimpio);
-        String ultimos4 = numLimpio.substring(numLimpio.length() - 4);
+        // Fecha de vencimiento: 4 años a partir de hoy (MM/YYYY)
+        LocalDateTime expDate = LocalDateTime.now().plusYears(4);
+        String fechaExp = String.format("%02d/%d", expDate.getMonthValue(), expDate.getYear());
 
         Tarjeta tarjeta = Tarjeta.builder()
                 .numDocumento(numDocumento)
-                .tipoDocumentoId(tipoDoc)
                 .tipoTarjeta(tipoTarjeta)
                 .ultimosCuatro(ultimos4)
                 .nombreTitular(nombreTitular)
-                .fechaExpiracion(expMes + "/" + expAnio)
-                .marca(marca)
-                .estadoId(2) // PENDIENTE
+                .fechaExpiracion(fechaExp)
+                .marcaTarjeta(getMarca(marca))
+                .estadoTarjeta(getEstado("PENDIENTE"))
                 .limiteCredito(0.0)
                 .creditoDisponible(0.0)
                 .saldoTarjeta(0.0)
@@ -51,7 +79,8 @@ public class TarjetaService {
                 .build();
 
         tarjetaRepository.save(tarjeta);
-        log.info("Solicitud de tarjeta registrada: marca={}, ultimos4={}, estado=PENDIENTE", marca, ultimos4);
+        log.info("Solicitud de tarjeta registrada: marca={}, ultimos4={}, exp={}, estado=PENDIENTE", marca, ultimos4,
+                fechaExp);
         return tarjeta;
     }
 
@@ -64,11 +93,11 @@ public class TarjetaService {
         Tarjeta tarjeta = tarjetaRepository.findById(tarjetaId)
                 .orElseThrow(() -> new RuntimeException("Tarjeta no encontrada"));
 
-        if (tarjeta.getEstadoId() != 2) {
+        if (!"PENDIENTE".equals(tarjeta.getEstadoNombre())) {
             throw new RuntimeException("La tarjeta no está pendiente de aprobación");
         }
 
-        tarjeta.setEstadoId(1); // ACTIVA
+        tarjeta.setEstadoTarjeta(getEstado("ACTIVA"));
         if ("CREDITO".equals(tarjeta.getTipoTarjeta())) {
             double limite = limiteCredito != null && limiteCredito > 0 ? limiteCredito : 1000000.0;
             tarjeta.setLimiteCredito(limite);
@@ -87,11 +116,11 @@ public class TarjetaService {
         Tarjeta tarjeta = tarjetaRepository.findById(tarjetaId)
                 .orElseThrow(() -> new RuntimeException("Tarjeta no encontrada"));
 
-        if (tarjeta.getEstadoId() != 2) {
+        if (!"PENDIENTE".equals(tarjeta.getEstadoNombre())) {
             throw new RuntimeException("La tarjeta no está pendiente de aprobación");
         }
 
-        tarjeta.setEstadoId(4); // RECHAZADA
+        tarjeta.setEstadoTarjeta(getEstado("RECHAZADA"));
         tarjeta.setMotivoRechazo(motivo != null ? motivo : "Solicitud rechazada por el administrador");
         tarjetaRepository.save(tarjeta);
         log.info("Tarjeta {} rechazada", tarjetaId);
@@ -101,8 +130,6 @@ public class TarjetaService {
     /**
      * Usuario recarga una tarjeta DÉBITO transfiriendo dinero desde su cuenta
      * bancaria.
-     * 
-     * @param numeroCuenta cuenta origen del usuario
      */
     public Tarjeta recargarDebito(Integer tarjetaId, String numDocumento, Double monto, String numeroCuenta) {
         Tarjeta tarjeta = tarjetaRepository.findById(tarjetaId)
@@ -111,7 +138,7 @@ public class TarjetaService {
         if (!tarjeta.getNumDocumento().equals(numDocumento)) {
             throw new RuntimeException("La tarjeta no pertenece al usuario");
         }
-        if (tarjeta.getEstadoId() != 1) {
+        if (!"ACTIVA".equals(tarjeta.getEstadoNombre())) {
             throw new RuntimeException("La tarjeta no está activa");
         }
         if (!"DEBITO".equals(tarjeta.getTipoTarjeta())) {
@@ -142,14 +169,14 @@ public class TarjetaService {
         return tarjeta;
     }
 
-    /** Devuelve todas las tarjetas del usuario (todas los estados) */
+    /** Devuelve todas las tarjetas del usuario (todos los estados) */
     public List<Tarjeta> obtenerTarjetasUsuario(String numDocumento) {
         return tarjetaRepository.findByNumDocumento(numDocumento);
     }
 
     /** Admin: obtiene todas las tarjetas pendientes */
     public List<Tarjeta> obtenerPendientes() {
-        return tarjetaRepository.findByEstadoId(2);
+        return tarjetaRepository.findByEstadoTarjetaNombre("PENDIENTE");
     }
 
     /** Admin: obtiene todas las tarjetas del sistema */
@@ -166,7 +193,7 @@ public class TarjetaService {
             throw new RuntimeException("No tienes permiso para eliminar esta tarjeta");
         }
 
-        tarjeta.setEstadoId(3); // ELIMINADA
+        tarjeta.setEstadoTarjeta(getEstado("ELIMINADA"));
         tarjetaRepository.save(tarjeta);
         log.info("Tarjeta desactivada: {}", tarjetaId);
     }

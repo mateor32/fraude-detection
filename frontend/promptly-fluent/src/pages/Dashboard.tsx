@@ -21,7 +21,7 @@ interface Transaccion {
   nombreDestino: string;
   nombreOrigen: string;
   fechaCreacion: string;
-  estadoId: number; // 4: Pendiente, 5: Aprobada, 6: Rechazada
+  estadoNombre: string; // PENDIENTE | APROBADA | RECHAZADA
 }
 
 const Dashboard = () => {
@@ -31,16 +31,12 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getStatus = (estadoId: number): "approved" | "rejected" | "pending" => {
-    switch (estadoId) {
-      case 5:
-        return "approved";
-      case 6:
-        return "rejected";
-      case 4:
-      default:
-        return "pending";
-    }
+  const getStatus = (
+    estadoNombre: string,
+  ): "approved" | "rejected" | "pending" => {
+    if (estadoNombre === "APROBADA") return "approved";
+    if (estadoNombre === "RECHAZADA") return "rejected";
+    return "pending";
   };
 
   // 1. Cargar transacciones y saldo reales desde el backend
@@ -50,18 +46,21 @@ const Dashboard = () => {
         setLoading(false);
         return;
       }
-      
+
       setError(null);
       try {
-        console.log("📡 Cargando transacciones para cuenta:", user.numeroCuenta);
-        
+        console.log(
+          "📡 Cargando transacciones para cuenta:",
+          user.numeroCuenta,
+        );
+
         // Fetch transacciones
         const transResponse = await fetch(
           `http://localhost:8080/api/transacciones/cuenta/${user.numeroCuenta}`,
         );
-        
+
         console.log("📡 Respuesta transacciones:", transResponse.status);
-        
+
         if (transResponse.ok) {
           const transData = await transResponse.json();
           console.log("📡 Transacciones recibidas:", transData);
@@ -70,11 +69,10 @@ const Dashboard = () => {
           console.warn(`Transacciones no disponibles: ${transResponse.status}`);
           setTransacciones([]);
         }
-        
+
         // Usar saldo del usuario (viene del login)
         console.log("💰 Saldo del usuario:", user.saldo);
         setSaldo(user.saldo || 0);
-        
       } catch (error) {
         console.error("Error al cargar datos:", error);
         setError(
@@ -120,7 +118,9 @@ const Dashboard = () => {
 
   // 2. Lógica de filtrado y estadísticas
   const recientes = transacciones.slice(0, 5);
-  const pendientesCount = transacciones.filter((t) => t.estadoId === 4).length;
+  const pendientesCount = transacciones.filter(
+    (t) => t.estadoNombre === "PENDIENTE",
+  ).length;
 
   const stats = [
     {
@@ -153,7 +153,9 @@ const Dashboard = () => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-red-900">Advertencia de conexión</h3>
+            <h3 className="font-semibold text-red-900">
+              Advertencia de conexión
+            </h3>
             <p className="text-sm text-red-700">{error}</p>
           </div>
         </div>
@@ -245,7 +247,7 @@ const Dashboard = () => {
                       {isOutgoing ? "-" : "+"}$
                       {txn.monto.toLocaleString("es-MX")}
                     </p>
-                    <StatusBadge status={getStatus(txn.estadoId)} />
+                    <StatusBadge status={getStatus(txn.estadoNombre)} />
                   </div>
                 </div>
               );

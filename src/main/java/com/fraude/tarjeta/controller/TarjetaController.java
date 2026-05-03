@@ -28,23 +28,19 @@ public class TarjetaController {
 
     /**
      * Usuario: solicitar una nueva tarjeta (queda PENDIENTE).
-     * Body: { tipoDocumentoId, nombreTitular, tipoTarjeta, numeroTarjeta, expMes,
-     * expAnio }
+     * Body: { nombreTitular, tipoTarjeta }
      */
     @PostMapping
     public ResponseEntity<?> solicitarTarjeta(
             @RequestHeader("X-User-Documento") String numDocumento,
             @RequestBody Map<String, Object> body) {
         try {
-            Integer tipoDoc = (Integer) body.get("tipoDocumentoId");
+
             String nombreTitular = (String) body.get("nombreTitular");
             String tipoTarjeta = (String) body.get("tipoTarjeta");
-            String numeroTarjeta = (String) body.get("numeroTarjeta");
-            Long expMes = Long.valueOf(body.get("expMes").toString());
-            Long expAnio = Long.valueOf(body.get("expAnio").toString());
 
             Tarjeta tarjeta = tarjetaService.solicitarTarjeta(
-                    numDocumento, tipoDoc, nombreTitular, tipoTarjeta, numeroTarjeta, expMes, expAnio);
+                    numDocumento, nombreTitular, tipoTarjeta);
 
             return ResponseEntity.ok(Map.of(
                     "mensaje", "Solicitud enviada. Espera la aprobacion del administrador.",
@@ -139,16 +135,18 @@ public class TarjetaController {
     }
 
     private Map<String, Object> buildTarjetaMap(Tarjeta t) {
-        return Map.of(
-                "id", t.getId(),
-                "tipoTarjeta", t.getTipoTarjeta(),
-                "marca", t.getMarca(),
-                "ultimosCuatro", t.getUltimosCuatro(),
-                "nombreTitular", t.getNombreTitular(),
-                "fechaExpiracion", t.getFechaExpiracion(),
-                "estadoId", t.getEstadoId(),
-                "limiteCredito", t.getLimiteCredito() != null ? t.getLimiteCredito() : 0.0,
-                "creditoDisponible", t.getCreditoDisponible() != null ? t.getCreditoDisponible() : 0.0,
-                "saldoTarjeta", t.getSaldoTarjeta() != null ? t.getSaldoTarjeta() : 0.0);
+        Map<String, Object> map = new java.util.HashMap<>();
+        map.put("id", t.getId());
+        map.put("tipoTarjeta", t.getTipoTarjeta());
+        map.put("marca", t.getMarca());
+        map.put("ultimosCuatro", t.getUltimosCuatro());
+        map.put("nombreTitular", t.getNombreTitular());
+        map.put("fechaExpiracion", t.getFechaExpiracion());
+        map.put("estadoId", t.getEstadoId());
+        map.put("estadoNombre", t.getEstadoNombre());
+        map.put("limiteCredito", t.getLimiteCredito() != null ? t.getLimiteCredito() : 0.0);
+        map.put("creditoDisponible", t.getCreditoDisponible() != null ? t.getCreditoDisponible() : 0.0);
+        map.put("saldoTarjeta", t.getSaldoTarjeta() != null ? t.getSaldoTarjeta() : 0.0);
+        return map;
     }
 }
