@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # 🏦 BancoDigital — Plataforma Bancaria Digital
+=======
+# 🛡️ FinBank - backend de un banco digital
+>>>>>>> 865e43781ff909e062a03f5a3993e100e59281cb
 
 <div align="center">
 
