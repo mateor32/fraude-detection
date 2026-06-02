@@ -8,8 +8,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clave-dinamica")
-@CrossOrigin(origins = { "http://localhost:8081", "http://localhost:5173", "http://127.0.0.1:5173",
-        "http://localhost:5174", "http://127.0.0.1:5174" })
 public class ClaveDinamicaController {
 
     private final ClaveDinamicaService service;

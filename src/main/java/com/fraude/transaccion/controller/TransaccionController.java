@@ -15,8 +15,6 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/transacciones")
-@CrossOrigin(origins = { "http://localhost:8081", "http://localhost:5173", "http://127.0.0.1:5173",
-        "http://localhost:5174", "http://127.0.0.1:5174" })
 public class TransaccionController {
 
     private final TransaccionService service;
