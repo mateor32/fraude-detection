@@ -112,8 +112,10 @@ const Login = () => {
               </Link>
             </p>
             <p className="text-xs text-muted-foreground text-center space-y-1">
-              <span className="block">Demo admin: 12345678 / admin123</span>
-              <span className="block">Demo usuario: 87654321 / user123</span>
+              <span className="block">Demo admin: 1000000001 / admin123</span>
+              <span className="block">
+                Demo usuario: 10151864945 / pruebausuario
+              </span>
             </p>
           </div>
         </div>

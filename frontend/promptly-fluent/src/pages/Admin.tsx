@@ -28,7 +28,9 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-const API = import.meta.env.VITE_API_BASE_URL ?? "https://fraude-detection-backend.onrender.com";
+const API =
+  import.meta.env.VITE_API_BASE_URL ??
+  "https://fraude-detection-backend.onrender.com";
 
 interface TarjetaPendiente {
   id: number;
